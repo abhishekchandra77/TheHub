@@ -299,6 +299,208 @@ def get_category_badge(category: str) -> str:
     else:
         return f'<span class="badge-tech">⚡ {category}</span>'
 
+
+def clear_session():
+    for key in ["logged_in", "user_role", "user_name", "user_email"]:
+        st.session_state.pop(key, None)
+
+
+def render_login():
+    st.markdown(
+        """
+        <div class="brand-shell">
+            <div class="brand-badge">🔐 Secure access</div>
+            <div class="hero-title">Welcome to TheHub</div>
+            <p class="hero-subtitle">Sign in as a creator or client to access the correct workspace.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    demo_accounts = {
+        "creator@thehub.com": {"password": "creator123", "role": "creator", "name": "Alex Rivera"},
+        "client@thehub.com": {"password": "client123", "role": "client", "name": "Ava Johnson"},
+    }
+
+    selected_role = st.radio("I am signing in as a", ["Creator", "Client"], horizontal=True)
+    email = st.text_input("Email address", placeholder="creator@thehub.com")
+    password = st.text_input("Password", type="password", placeholder="Enter password")
+
+    c1, c2, c3 = st.columns([1, 1, 1])
+    with c1:
+        if st.button("Login", type="primary", use_container_width=True):
+            account = demo_accounts.get(email.strip().lower())
+            if account and account["password"] == password and account["role"] == selected_role.lower():
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = account["role"]
+                st.session_state["user_name"] = account["name"]
+                st.session_state["user_email"] = email.strip().lower()
+                st.rerun()
+            else:
+                st.error("Invalid email, password, or role selection.")
+
+    with c2:
+        if st.button("Use Demo Creator", use_container_width=True):
+            st.session_state["logged_in"] = True
+            st.session_state["user_role"] = "creator"
+            st.session_state["user_name"] = "Alex Rivera"
+            st.session_state["user_email"] = "creator@thehub.com"
+            st.rerun()
+
+    with c3:
+        if st.button("Use Demo Client", use_container_width=True):
+            st.session_state["logged_in"] = True
+            st.session_state["user_role"] = "client"
+            st.session_state["user_name"] = "Ava Johnson"
+            st.session_state["user_email"] = "client@thehub.com"
+            st.rerun()
+
+    st.markdown("<div class='feature-panel'>", unsafe_allow_html=True)
+    st.write("Demo credentials")
+    st.code("Creator: creator@thehub.com / creator123\nClient: client@thehub.com / client123")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_client_app():
+    if st.button("Logout"):
+        clear_session()
+        st.rerun()
+
+    st.markdown(
+        """
+        <div class="brand-shell">
+            <div class="brand-badge">💼 Client portal</div>
+            <div class="hero-title">Find the right creator for your next project</div>
+            <p class="hero-subtitle">Browse vetted creators, compare offers, and track each project from a dedicated client workspace.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    client_tabs = st.tabs(["Browse Gigs", "My Bookings", "Saved Shortlist"])
+
+    with client_tabs[0]:
+        st.header("Marketplace")
+        filter_col1, filter_col2, filter_col3 = st.columns([1.5, 2, 1.5])
+        with filter_col1:
+            category_choice = st.selectbox("Filter Category", ["All", "Video & UGC", "Design & Graphics", "Writing & Translation", "Tech & AI"])
+        with filter_col2:
+            search_term = st.text_input("Search services or creators", placeholder="e.g. TikTok, thumbnails, AI automation")
+        with filter_col3:
+            sort_choice = st.selectbox("Sort by", ["Newest First", "Price: Low to High", "Price: High to Low"])
+
+        sort_param = "newest"
+        if sort_choice == "Price: Low to High":
+            sort_param = "cheapest"
+        elif sort_choice == "Price: High to Low":
+            sort_param = "priciest"
+
+        try:
+            params = {"sort_by": sort_param}
+            if category_choice != "All":
+                params["category"] = category_choice
+            if search_term.strip():
+                params["search"] = search_term.strip()
+            resp = requests.get(f"{API_BASE}/gigs", params=params, timeout=5)
+            if resp.status_code == 200:
+                gigs = resp.json()
+                if not gigs:
+                    st.info("No gigs match your current filters.")
+                else:
+                    for gig in gigs:
+                        st.markdown("<div class='gig-card'>", unsafe_allow_html=True)
+                        left_col, right_col = st.columns([3.2, 1.2])
+                        with left_col:
+                            st.markdown(get_category_badge(gig["category"]), unsafe_allow_html=True)
+                            st.subheader(gig["title"])
+                            st.caption(f"Creator: **{gig['creator_name']}** | **{gig['category']}**")
+                            st.write(gig["description"])
+                        with right_col:
+                            st.markdown(f"<div class='rate-pill'>${gig['rate']:.2f}</div>", unsafe_allow_html=True)
+                            st.caption("Fast turnaround")
+                            with st.popover("Book this gig", use_container_width=True):
+                                st.write(f"Project for: **{gig['title']}**")
+                                client_name = st.text_input("Your name", key=f"client_name_{gig['id']}")
+                                client_email = st.text_input("Email", key=f"client_email_{gig['id']}")
+                                brief = st.text_area("Project requirements", key=f"client_brief_{gig['id']}")
+                                if st.button("Submit booking", key=f"booking_{gig['id']}", type="primary", use_container_width=True):
+                                    if not client_name.strip() or not client_email.strip() or not brief.strip():
+                                        st.error("Please complete the booking details.")
+                                    else:
+                                        payload = {
+                                            "gig_id": gig["id"],
+                                            "client_name": client_name.strip(),
+                                            "client_email": client_email.strip(),
+                                            "requirements": brief.strip(),
+                                        }
+                                        res = requests.post(f"{API_BASE}/bookings", json=payload, timeout=5)
+                                        if res.status_code in [200, 201]:
+                                            st.success("Booking sent successfully.")
+                                            st.session_state["active_client"] = client_name.strip()
+                                        else:
+                                            st.error(f"Booking failed: {res.text}")
+                        st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.error("Unable to load marketplace.")
+        except Exception as e:
+            st.error(f"Connection error: {str(e)}")
+
+    with client_tabs[1]:
+        st.header("My Bookings")
+        client_name_query = st.text_input("Filter by your name", value=st.session_state.get("active_client", ""))
+        try:
+            params = {}
+            if client_name_query.strip():
+                params["client_name"] = client_name_query.strip()
+            res = requests.get(f"{API_BASE}/client/bookings", params=params, timeout=5)
+            if res.status_code == 200:
+                bookings = res.json()
+                if not bookings:
+                    st.info("No bookings yet. Browse the marketplace to begin.")
+                else:
+                    for booking in bookings:
+                        st.markdown("<div class='gig-card'>", unsafe_allow_html=True)
+                        st.subheader(booking["gig_title"])
+                        st.write(f"Creator: **{booking['creator_name']}** | Category: **{booking['category']}** | Rate: **${booking['rate']:.2f}**")
+                        st.write(f"Requirements: {booking['requirements']}")
+                        if booking["status"] == "Accepted":
+                            st.success("Accepted")
+                        elif booking["status"] == "Declined":
+                            st.error("Declined")
+                            if booking.get("rejection_reason"):
+                                st.info(f"Reason: {booking['rejection_reason']}")
+                        else:
+                            st.warning("Pending review")
+                        st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.error("Could not load bookings.")
+        except Exception as e:
+            st.error(f"Connection error: {str(e)}")
+
+    with client_tabs[2]:
+        st.header("Saved Shortlist")
+        st.info("This space can hold favorite creators or preferred categories for faster booking later.")
+        st.markdown(
+            """
+            - TikTok / UGC creators
+            - AI automation specialists
+            - YouTube thumbnail designers
+            - Newsletter & copywriting experts
+            """
+        )
+
+
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+
+if not st.session_state.get("logged_in", False):
+    render_login()
+    st.stop()
+
+if st.session_state.get("user_role") != "creator":
+    render_client_app()
+    st.stop()
+
 # --- Header & Live Stats Bar ---
 col_title, col_status = st.columns([3.2, 1.0], gap="medium")
 with col_title:
