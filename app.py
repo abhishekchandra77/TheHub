@@ -46,9 +46,20 @@ def apply_theme_css():
     st.markdown(
         f"""
         <style>
+            :root {{
+                --app-bg: {bg};
+                --app-bg-alt: {bg_alt};
+                --app-panel: {panel};
+                --app-panel-soft: {panel_soft};
+                --app-text: {text};
+                --app-text-soft: {text_soft};
+                --app-line: {line};
+                --app-input-bg: {input_bg};
+                --app-button-bg: {button_bg};
+            }}
             html, body, [data-testid="stAppViewContainer"] {{
-                background: linear-gradient(180deg, {bg} 0%, {bg_alt} 100%);
-                color: {text};
+                background: linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg-alt) 100%);
+                color: var(--app-text);
             }}
             .stApp {{ background: transparent; }}
             .block-container {{ max-width: 1380px; padding-top: 2rem; padding-bottom: 2rem; }}
@@ -118,11 +129,8 @@ st.markdown("""
 
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
-        background:
-            radial-gradient(circle at top left, rgba(124, 58, 237, 0.20), transparent 25%),
-            radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 25%),
-            linear-gradient(180deg, #0b1020 0%, #111827 100%);
-        color: #e5eefb;
+        background: var(--app-bg, #0b1020);
+        color: var(--app-text, #e5eefb);
     }
 
     .stApp {
@@ -171,12 +179,12 @@ st.markdown("""
         font-weight: 900;
         letter-spacing: -0.06em;
         line-height: 1.02;
-        color: #f8fbff;
+        color: var(--app-text, #f8fbff);
     }
 
     .hero-subtitle {
         margin: 0;
-        color: #cbd5e1;
+        color: var(--app-text-soft, #cbd5e1);
         font-size: 1.02rem;
         max-width: 760px;
         line-height: 1.6;
@@ -350,7 +358,7 @@ st.markdown("""
     }
 
     .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label {
-        color: #dfe7f5 !important;
+        color: var(--app-text, #dfe7f5) !important;
         font-weight: 600 !important;
     }
 
@@ -590,6 +598,8 @@ def render_client_app():
             """
         )
 
+
+apply_theme_css()
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
