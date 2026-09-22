@@ -118,7 +118,7 @@ def apply_theme_css():
 
 def render_theme_toggle():
     theme = st.session_state.get("theme", "dark")
-    selected = st.radio("Theme", ["Dark", "Light"], index=0 if theme == "dark" else 1, horizontal=True, key="theme_choice")
+    selected = st.radio("Theme", ["Dark", "Light"], index=0 if theme == "dark" else 1, horizontal=True, key=f"theme_choice_{hash(str(st.session_state.get('user_email','guest')))}")
     st.session_state["theme"] = "dark" if selected == "Dark" else "light"
 
 
@@ -328,6 +328,57 @@ st.markdown("""
         filter: brightness(1.02);
     }
 
+    .theme-toggle {
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.18);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        margin-bottom: 1rem;
+    }
+
+    .login-shell {
+        background: linear-gradient(135deg, rgba(124,58,237,0.10), rgba(14,165,233,0.08));
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 28px;
+        padding: 1.6rem;
+        box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    .login-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.68));
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 22px;
+        padding: 1.4rem;
+    }
+
+    .glass-box {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.58));
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 20px;
+        padding: 1.1rem;
+    }
+
+    .page-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .page-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(148,163,184,0.18);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--app-text, #f8fafc);
+    }
+
     .stTabs [role="tablist"] {
         gap: 0.6rem;
     }
@@ -414,63 +465,84 @@ def clear_session():
 
 def render_login():
     render_theme_toggle()
-    st.markdown(
-        """
-        <div class="brand-shell">
-            <div class="brand-badge">🔐 Secure access</div>
-            <div class="hero-title">Welcome to TheHub</div>
-            <p class="hero-subtitle">Sign in as a creator or client to access the correct workspace.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    left_col, right_col = st.columns([1.2, 1.0], gap="large")
 
-    demo_accounts = {
-        "creator@thehub.com": {"password": "creator123", "role": "creator", "name": "Alex Rivera"},
-        "client@thehub.com": {"password": "client123", "role": "client", "name": "Ava Johnson"},
-    }
+    with left_col:
+        st.markdown(
+            """
+            <div class="login-shell">
+                <div class="brand-badge">✨ Smart marketplace</div>
+                <div class="hero-title" style="margin-top: 1rem;">Welcome to TheHub</div>
+                <p class="hero-subtitle">Your workspace for discovering talent, managing bookings, and scaling creative projects with clarity.</p>
+                <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <span class="page-chip">🎨 Creators</span>
+                    <span class="page-chip">💼 Clients</span>
+                    <span class="page-chip">⚡ Fast booking</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    selected_role = st.radio("I am signing in as a", ["Creator", "Client"], horizontal=True)
-    email = st.text_input("Email address", placeholder="creator@thehub.com")
-    password = st.text_input("Password", type="password", placeholder="Enter password")
+    with right_col:
+        st.markdown("<div class='login-card'>", unsafe_allow_html=True)
+        st.subheader("Sign in")
+        st.caption("Choose your role and continue to your workspace")
 
-    c1, c2, c3 = st.columns([1, 1, 1])
-    with c1:
-        if st.button("Login", type="primary", use_container_width=True):
-            account = demo_accounts.get(email.strip().lower())
-            if account and account["password"] == password and account["role"] == selected_role.lower():
+        demo_accounts = {
+            "creator@thehub.com": {"password": "creator123", "role": "creator", "name": "Alex Rivera"},
+            "client@thehub.com": {"password": "client123", "role": "client", "name": "Ava Johnson"},
+        }
+
+        selected_role = st.radio("I am signing in as a", ["Creator", "Client"], horizontal=True)
+        email = st.text_input("Email address", placeholder="creator@thehub.com")
+        password = st.text_input("Password", type="password", placeholder="Enter password")
+
+        c1, c2, c3 = st.columns([1, 1, 1])
+        with c1:
+            if st.button("Login", type="primary", use_container_width=True):
+                account = demo_accounts.get(email.strip().lower())
+                if account and account["password"] == password and account["role"] == selected_role.lower():
+                    st.session_state["logged_in"] = True
+                    st.session_state["user_role"] = account["role"]
+                    st.session_state["user_name"] = account["name"]
+                    st.session_state["user_email"] = email.strip().lower()
+                    st.rerun()
+                else:
+                    st.error("Invalid email, password, or role selection.")
+
+        with c2:
+            if st.button("Demo Creator", use_container_width=True):
                 st.session_state["logged_in"] = True
-                st.session_state["user_role"] = account["role"]
-                st.session_state["user_name"] = account["name"]
-                st.session_state["user_email"] = email.strip().lower()
+                st.session_state["user_role"] = "creator"
+                st.session_state["user_name"] = "Alex Rivera"
+                st.session_state["user_email"] = "creator@thehub.com"
                 st.rerun()
-            else:
-                st.error("Invalid email, password, or role selection.")
 
-    with c2:
-        if st.button("Use Demo Creator", use_container_width=True):
-            st.session_state["logged_in"] = True
-            st.session_state["user_role"] = "creator"
-            st.session_state["user_name"] = "Alex Rivera"
-            st.session_state["user_email"] = "creator@thehub.com"
-            st.rerun()
+        with c3:
+            if st.button("Demo Client", use_container_width=True):
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "client"
+                st.session_state["user_name"] = "Ava Johnson"
+                st.session_state["user_email"] = "client@thehub.com"
+                st.rerun()
 
-    with c3:
-        if st.button("Use Demo Client", use_container_width=True):
-            st.session_state["logged_in"] = True
-            st.session_state["user_role"] = "client"
-            st.session_state["user_name"] = "Ava Johnson"
-            st.session_state["user_email"] = "client@thehub.com"
-            st.rerun()
-
-    st.markdown("<div class='feature-panel'>", unsafe_allow_html=True)
-    st.write("Demo credentials")
-    st.code("Creator: creator@thehub.com / creator123\nClient: client@thehub.com / client123")
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<div class='glass-box' style='margin-top: 1.2rem;'>", unsafe_allow_html=True)
+        st.write("Demo credentials")
+        st.code("Creator: creator@thehub.com / creator123\nClient: client@thehub.com / client123")
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_client_app():
-    render_theme_toggle()
+    st.markdown("<div class='page-topbar'>", unsafe_allow_html=True)
+    left, right = st.columns([2, 1])
+    with left:
+        st.markdown("<span class='page-chip'>💼 Client portal</span>", unsafe_allow_html=True)
+    with right:
+        render_theme_toggle()
+    st.markdown("</div>", unsafe_allow_html=True)
+
     if st.button("Logout"):
         clear_session()
         st.rerun()
@@ -615,7 +687,14 @@ if st.session_state.get("user_role") != "creator":
 apply_theme_css()
 
 # --- Header & Live Stats Bar ---
-render_theme_toggle()
+st.markdown("<div class='page-topbar'>", unsafe_allow_html=True)
+head_left, head_right = st.columns([2, 1])
+with head_left:
+    st.markdown("<span class='page-chip'>🚀 Creator marketplace</span>", unsafe_allow_html=True)
+with head_right:
+    render_theme_toggle()
+st.markdown("</div>", unsafe_allow_html=True)
+
 col_title, col_status = st.columns([3.2, 1.0], gap="medium")
 with col_title:
     st.markdown(
