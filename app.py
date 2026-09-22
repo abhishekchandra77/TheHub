@@ -12,6 +12,105 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "dark"
+
+
+def apply_theme_css():
+    theme = st.session_state.get("theme", "dark")
+    if theme == "dark":
+        bg = "#0b1020"
+        bg_alt = "#111827"
+        panel = "rgba(15, 23, 42, 0.82)"
+        panel_soft = "rgba(15, 23, 42, 0.66)"
+        text = "#e5eefb"
+        text_soft = "#cbd5e1"
+        line = "rgba(148, 163, 184, 0.2)"
+        input_bg = "rgba(15,23,42,0.72)"
+        button_bg = "rgba(15, 23, 42, 0.8)"
+        accent_1 = "#8b5cf6"
+        accent_2 = "#60a5fa"
+    else:
+        bg = "#f3f6fb"
+        bg_alt = "#edf2ff"
+        panel = "rgba(255, 255, 255, 0.9)"
+        panel_soft = "rgba(255, 255, 255, 0.72)"
+        text = "#111827"
+        text_soft = "#475569"
+        line = "rgba(148, 163, 184, 0.35)"
+        input_bg = "rgba(255,255,255,0.82)"
+        button_bg = "rgba(255,255,255,0.9)"
+        accent_1 = "#7c3aed"
+        accent_2 = "#2563eb"
+
+    st.markdown(
+        f"""
+        <style>
+            html, body, [data-testid="stAppViewContainer"] {{
+                background: linear-gradient(180deg, {bg} 0%, {bg_alt} 100%);
+                color: {text};
+            }}
+            .stApp {{ background: transparent; }}
+            .block-container {{ max-width: 1380px; padding-top: 2rem; padding-bottom: 2rem; }}
+            [data-testid="stHeader"] {{ background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(8px); }}
+            .brand-shell {{
+                background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(14,165,233,0.10));
+                border: 1px solid {line};
+                border-radius: 22px;
+                padding: 1.2rem 1.3rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            }}
+            .brand-badge {{
+                display: inline-flex; align-items: center; gap: 0.5rem;
+                background: rgba(255,255,255,0.06);
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 999px; padding: 0.45rem 0.8rem; font-size: 0.72rem; font-weight: 700;
+                text-transform: uppercase; letter-spacing: 0.12em; color: #c4b5fd;
+            }}
+            .hero-title {{ margin-top: 0.55rem; margin-bottom: 0.2rem; font-size: clamp(2.1rem, 4vw, 3.5rem); font-weight: 900; letter-spacing: -0.06em; line-height: 1.02; color: {text}; }}
+            .hero-subtitle {{ margin: 0; color: {text_soft}; font-size: 1.02rem; max-width: 760px; line-height: 1.6; }}
+            .status-chip {{
+                display: inline-flex; align-items: center; justify-content: center; width: 100%;
+                padding: 0.72rem 0.9rem; border-radius: 16px; font-weight: 700;
+                background: rgba(15, 118, 110, 0.12); border: 1px solid rgba(45, 212, 191, 0.25); color: #a7f3d0;
+                box-shadow: 0 16px 30px rgba(16, 185, 129, 0.12);
+            }}
+            .status-chip.offline {{ background: rgba(127, 29, 29, 0.18); border-color: rgba(248, 113, 113, 0.18); color: #fecaca; }}
+            .metric-card {{
+                background: linear-gradient(180deg, {panel}, {panel_soft}); border: 1px solid {line}; border-radius: 18px; padding: 1rem 1.1rem; box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12); min-height: 120px;
+            }}
+            [data-testid="stMetricValue"] {{ font-size: 1.65rem !important; font-weight: 800 !important; color: {text}; }}
+            [data-testid="stMetricLabel"] {{ color: {text_soft} !important; font-weight: 600 !important; letter-spacing: 0.01em; }}
+            .badge-video {{ background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; padding: 0.38rem 0.8rem; border-radius: 9999px; font-size: 0.76rem; font-weight: 700; display: inline-block; letter-spacing: 0.01em; box-shadow: 0 12px 25px rgba(124, 58, 237, 0.26); }}
+            .badge-design {{ background: linear-gradient(135deg, #ec4899, #f43f5e); color: white; padding: 0.38rem 0.8rem; border-radius: 9999px; font-size: 0.76rem; font-weight: 700; display: inline-block; letter-spacing: 0.01em; box-shadow: 0 12px 25px rgba(236, 72, 153, 0.20); }}
+            .badge-writing {{ background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 0.38rem 0.8rem; border-radius: 9999px; font-size: 0.76rem; font-weight: 700; display: inline-block; letter-spacing: 0.01em; box-shadow: 0 12px 25px rgba(16, 185, 129, 0.22); }}
+            .badge-tech {{ background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 0.38rem 0.8rem; border-radius: 9999px; font-size: 0.76rem; font-weight: 700; display: inline-block; letter-spacing: 0.01em; box-shadow: 0 12px 25px rgba(59, 130, 246, 0.22); }}
+            .rate-pill {{ font-size: 1.7rem; font-weight: 900; color: #34d399; letter-spacing: -0.05em; line-height: 1; }}
+            .gig-card {{
+                background: linear-gradient(180deg, {panel}, {panel_soft}); border: 1px solid {line}; border-radius: 22px; padding: 1.25rem; box-shadow: 0 18px 35px rgba(15,23,42,0.12); margin-bottom: 1rem;
+            }}
+            .feature-panel {{ background: linear-gradient(180deg, {panel}, {panel_soft}); border: 1px solid {line}; border-radius: 18px; padding: 1rem 1.1rem; margin-top: 0.5rem; box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12); }}
+            .mini-label {{ display: inline-block; margin-bottom: 0.5rem; color: #a5b4fc; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }}
+            .stTabs [role="tablist"] {{ gap: 0.6rem; }}
+            .stTabs [role="tab"] {{ border-radius: 12px 12px 0 0; background: rgba(15,23,42,0.2); border: 1px solid {line}; padding: 0.6rem 1rem; color: {text}; font-weight: 600; }}
+            .stTabs [role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg, rgba(139,92,246,0.20), rgba(59,130,246,0.20)); border-color: rgba(165,180,252,0.3); color: {text}; }}
+            .stTextInput > div > div > input, .stNumberInput > div > div > input, .stSelectbox > div > div, .stTextArea > div > div > textarea {{ background: {input_bg}; border: 1px solid {line}; color: {text}; border-radius: 12px; }}
+            .stTextInput label, .stNumberInput label, .stSelectbox label, .stTextArea label {{ color: {text} !important; font-weight: 600 !important; }}
+            .stPopover > button {{ background: {button_bg} !important; border: 1px solid {line} !important; color: {text} !important; border-radius: 12px !important; }}
+            .stButton > button {{ background: linear-gradient(135deg, {accent_1}, {accent_2}) !important; color: white !important; border: none !important; }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_theme_toggle():
+    theme = st.session_state.get("theme", "dark")
+    selected = st.radio("Theme", ["Dark", "Light"], index=0 if theme == "dark" else 1, horizontal=True, key="theme_choice")
+    st.session_state["theme"] = "dark" if selected == "Dark" else "light"
+
+
 # --- Custom Styling (Premium Creator Marketplace Theme) ---
 st.markdown("""
 <style>
@@ -306,6 +405,7 @@ def clear_session():
 
 
 def render_login():
+    render_theme_toggle()
     st.markdown(
         """
         <div class="brand-shell">
@@ -362,6 +462,7 @@ def render_login():
 
 
 def render_client_app():
+    render_theme_toggle()
     if st.button("Logout"):
         clear_session()
         st.rerun()
@@ -501,7 +602,10 @@ if st.session_state.get("user_role") != "creator":
     render_client_app()
     st.stop()
 
+apply_theme_css()
+
 # --- Header & Live Stats Bar ---
+render_theme_toggle()
 col_title, col_status = st.columns([3.2, 1.0], gap="medium")
 with col_title:
     st.markdown(
